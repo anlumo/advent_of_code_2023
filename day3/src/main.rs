@@ -20,7 +20,7 @@ struct Part {
 }
 
 #[derive(Debug)]
-struct Symbol {
+struct Gear {
     row: usize,
     column: usize,
 }
@@ -44,7 +44,7 @@ fn main() -> std::io::Result<()> {
     let reader = BufReader::new(file);
 
     let mut parts = Vec::new();
-    let mut symbols = Vec::new();
+    let mut gears = Vec::new();
 
     for (row, text) in reader.lines().enumerate() {
         let text = text?;
@@ -67,8 +67,8 @@ fn main() -> std::io::Result<()> {
                     partno = 0;
                     part_start = None;
                 }
-                if c != '.' {
-                    symbols.push(Symbol { row, column });
+                if c == '*' {
+                    gears.push(Gear { row, column });
                 }
             }
         }
@@ -81,27 +81,22 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    let sum: u32 = symbols
+    let sum: u32 = gears
         .into_iter()
         .map(|symbol| {
-            let mut sum = 0;
+            let mut adjacent_parts = Vec::new();
 
             if symbol.row > 0 {
-                sum += find_parts(symbol.row - 1, symbol.column, &parts)
-                    .into_iter()
-                    .map(|part| part.number)
-                    .sum::<u32>();
+                adjacent_parts.extend(find_parts(symbol.row - 1, symbol.column, &parts));
             }
-            sum += find_parts(symbol.row, symbol.column, &parts)
-                .into_iter()
-                .map(|part| part.number)
-                .sum::<u32>();
-            sum += find_parts(symbol.row + 1, symbol.column, &parts)
-                .into_iter()
-                .map(|part| part.number)
-                .sum::<u32>();
+            adjacent_parts.extend(find_parts(symbol.row, symbol.column, &parts));
+            adjacent_parts.extend(find_parts(symbol.row + 1, symbol.column, &parts));
 
-            sum
+            if adjacent_parts.len() == 2 {
+                adjacent_parts[0].number * adjacent_parts[1].number
+            } else {
+                0
+            }
         })
         .sum();
 
