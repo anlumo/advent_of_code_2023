@@ -9,12 +9,6 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 struct Args {
     filename: PathBuf,
-    #[clap(short, long)]
-    red: usize,
-    #[clap(short, long)]
-    green: usize,
-    #[clap(short, long)]
-    blue: usize,
 }
 
 fn main() -> std::io::Result<()> {
@@ -25,12 +19,15 @@ fn main() -> std::io::Result<()> {
 
     let sum: usize = reader
         .lines()
-        .enumerate()
-        .filter_map(|(idx, line)| {
+        .filter_map(|line| {
             let line = line.unwrap();
             let Some((_, def)) = line.split_once(": ") else {
                 return None;
             };
+
+            let mut max_red = 0;
+            let mut max_green = 0;
+            let mut max_blue = 0;
 
             for draw in def.split("; ") {
                 for pick in draw.split(", ") {
@@ -38,18 +35,18 @@ fn main() -> std::io::Result<()> {
                         let count = count.parse::<usize>().unwrap();
                         match name {
                             "red" => {
-                                if args.red < count {
-                                    return None;
+                                if max_red < count {
+                                    max_red = count;
                                 }
                             }
                             "green" => {
-                                if args.green < count {
-                                    return None;
+                                if max_green < count {
+                                    max_green = count;
                                 }
                             }
                             "blue" => {
-                                if args.blue < count {
-                                    return None;
+                                if max_blue < count {
+                                    max_blue = count;
                                 }
                             }
                             _ => return None,
@@ -58,7 +55,7 @@ fn main() -> std::io::Result<()> {
                 }
             }
 
-            Some(idx + 1)
+            Some(max_red * max_green * max_blue)
         })
         .sum();
 
