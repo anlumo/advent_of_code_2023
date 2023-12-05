@@ -3,6 +3,7 @@ use std::{
     io::{BufRead, BufReader},
     ops::Range,
     path::PathBuf,
+    time::Instant,
 };
 
 use clap::Parser;
@@ -24,6 +25,8 @@ fn main() -> std::io::Result<()> {
     let reader = BufReader::new(file);
     let mut lines = reader.lines();
 
+    let now = Instant::now();
+
     let Some(Ok(seeds)) = lines.next() else {
         eprintln!("No seeds");
         return Ok(());
@@ -31,6 +34,11 @@ fn main() -> std::io::Result<()> {
     let seeds: Vec<_> = seeds
         .split_whitespace()
         .filter_map(|seed| seed.parse::<i64>().ok())
+        .collect();
+
+    let seeds: Vec<_> = seeds
+        .chunks_exact(2)
+        .map(|seed| seed[0]..(seed[1] + seed[0]))
         .collect();
 
     let mut mappings = Vec::<Vec<Mapper>>::new();
@@ -64,23 +72,22 @@ fn main() -> std::io::Result<()> {
         mappings.push(current_mapping);
     }
 
-    let locations: Vec<_> = seeds
-        .into_iter()
-        .map(|mut seed| {
-            for mapping in mappings.iter() {
-                for map in mapping {
-                    if map.source.contains(&seed) {
-                        seed += map.offset;
-                        break;
-                    }
+    let locations = seeds.into_iter().flatten().map(|mut seed| {
+        for mapping in mappings.iter() {
+            for map in mapping {
+                if map.source.contains(&seed) {
+                    seed += map.offset;
+                    break;
                 }
             }
-            seed
-        })
-        .collect();
+        }
+        seed
+    });
 
-    println!("locations: {locations:?}");
-    println!("lowest: {}", locations.into_iter().min().unwrap());
+    println!("lowest: {}", locations.min().unwrap());
+
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}", elapsed);
 
     Ok(())
 }
