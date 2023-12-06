@@ -18,33 +18,33 @@ fn main() -> std::io::Result<()> {
     let reader = BufReader::new(file);
     let mut lines = reader.lines();
 
-    let times: Vec<_> = lines
+    let line1 = lines
         .next()
         .expect("time line missing")
-        .expect("line 1 is not text")
-        .split_whitespace()
-        .filter_map(|t| t.parse::<usize>().ok())
-        .collect();
-
-    let distance: Vec<_> = lines
+        .expect("line 1 is not text");
+    let line2 = lines
         .next()
         .expect("distance line missing")
-        .expect("line 2 is not text")
-        .split_whitespace()
-        .filter_map(|t| t.parse::<usize>().ok())
-        .collect();
+        .expect("line 2 is not text");
 
-    let result = times
-        .into_iter()
-        .zip(distance)
-        .map(|(time, distance)| {
-            (0..time)
-                .map(|acceleration| (acceleration + 1) * (time - acceleration - 1))
-                .filter(|&my_distance| my_distance > distance)
-                .count()
-        })
-        .reduce(|prev, item| prev * item)
-        .unwrap();
+    let Some((_, time)) = line1.split_once(':') else {
+        panic!("line 1 doesn't have two parts");
+    };
+
+    let time = time.replace(' ', "");
+    let time = time.parse::<usize>().unwrap();
+
+    let Some((_, distance)) = line2.split_once(':') else {
+        panic!("line 2 doesn't have two parts");
+    };
+
+    let distance = distance.replace(' ', "");
+    let distance = distance.parse::<usize>().unwrap();
+
+    let result = (0..time)
+        .map(|acceleration| (acceleration + 1) * (time - acceleration - 1))
+        .filter(|&my_distance| my_distance > distance)
+        .count();
 
     println!("{result}");
 
