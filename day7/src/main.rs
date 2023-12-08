@@ -33,6 +33,7 @@ struct Bet {
 
 impl Bet {
     fn analyze(&self) -> HandType {
+        let j_count = self.cards.iter().filter(|&c| *c == 1).count();
         let set: HashSet<_> = self.cards.iter().copied().collect();
         match set.len() {
             1 => HandType::FiveOfAKind,
@@ -42,8 +43,11 @@ impl Bet {
                     self.cards.iter().filter(|&c| *c == unique[0]).count(),
                     self.cards.iter().filter(|&c| *c == unique[1]).count(),
                 ) {
-                    (4, _) | (_, 4) => HandType::FourOfAKind,
-                    (3, 2) | (2, 3) => HandType::FullHouse,
+                    (4, 1) | (1, 4) if j_count == 0 => HandType::FourOfAKind,
+                    (4, 1) | (1, 4) => HandType::FiveOfAKind,
+                    (3, 2) | (2, 3) if j_count == 0 => HandType::FullHouse,
+                    (3, 2) | (2, 3) if j_count == 1 => HandType::FourOfAKind,
+                    (3, 2) | (2, 3) => HandType::FiveOfAKind,
                     _ => unreachable!(),
                 }
             }
@@ -54,13 +58,28 @@ impl Bet {
                     self.cards.iter().filter(|&c| *c == unique[1]).count(),
                     self.cards.iter().filter(|&c| *c == unique[2]).count(),
                 ) {
-                    (3, 1, 1) | (1, 3, 1) | (1, 1, 3) => HandType::ThreeOfAKind,
-                    (2, 2, 1) | (2, 1, 2) | (1, 2, 2) => HandType::TwoPair,
+                    (3, 1, 1) | (1, 3, 1) | (1, 1, 3) if j_count == 0 => HandType::ThreeOfAKind,
+                    (3, 1, 1) | (1, 3, 1) | (1, 1, 3) => HandType::FourOfAKind,
+                    (2, 2, 1) | (2, 1, 2) | (1, 2, 2) if j_count == 0 => HandType::TwoPair,
+                    (2, 2, 1) | (2, 1, 2) | (1, 2, 2) if j_count == 1 => HandType::FullHouse,
+                    (2, 2, 1) | (2, 1, 2) | (1, 2, 2) => HandType::FourOfAKind,
                     _ => unreachable!(),
                 }
             }
-            4 => HandType::OnePair,
-            _ => HandType::HighCard,
+            4 => {
+                if j_count == 0 {
+                    HandType::OnePair
+                } else {
+                    HandType::ThreeOfAKind
+                }
+            }
+            _ => {
+                if j_count == 0 {
+                    HandType::HighCard
+                } else {
+                    HandType::OnePair
+                }
+            }
         }
     }
 }
@@ -92,6 +111,7 @@ impl std::fmt::Debug for Bet {
             self.cards
                 .iter()
                 .map(|&card| match card {
+                    1 => 'J',
                     2 => '2',
                     3 => '3',
                     4 => '4',
@@ -101,10 +121,9 @@ impl std::fmt::Debug for Bet {
                     8 => '8',
                     9 => '9',
                     10 => 'T',
-                    11 => 'J',
-                    12 => 'Q',
-                    13 => 'K',
-                    14 => 'A',
+                    11 => 'Q',
+                    12 => 'K',
+                    13 => 'A',
                     _ => '?',
                 })
                 .collect::<String>(),
@@ -132,6 +151,7 @@ fn main() -> std::io::Result<()> {
                 cards: hand
                     .chars()
                     .map(|c| match c {
+                        'J' => 1,
                         '2' => 2,
                         '3' => 3,
                         '4' => 4,
@@ -141,10 +161,9 @@ fn main() -> std::io::Result<()> {
                         '8' => 8,
                         '9' => 9,
                         'T' => 10,
-                        'J' => 11,
-                        'Q' => 12,
-                        'K' => 13,
-                        'A' => 14,
+                        'Q' => 11,
+                        'K' => 12,
+                        'A' => 13,
                         _ => 0,
                     })
                     .collect::<Vec<_>>()
