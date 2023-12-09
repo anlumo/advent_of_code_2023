@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fmt::Debug,
     fs::File,
     io::{BufRead, BufReader},
     path::PathBuf,
@@ -17,8 +18,14 @@ enum Direction {
     Right,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Key([char; 3]);
+
+impl std::fmt::Debug for Key {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Key[{}{}{}]", self.0[0], self.0[1], self.0[2])
+    }
+}
 
 impl TryFrom<&str> for Key {
     type Error = ();
@@ -72,19 +79,26 @@ fn main() -> std::io::Result<()> {
 
     let mut step = 0;
     let mut current_instruction = instructions.iter();
-    let mut current = &Key(['A', 'A', 'A']);
-    while current.0[0] != 'Z' && current.0[1] != 'Z' && current.0[2] != 'Z' {
+    let mut current: Vec<_> = map.keys().filter(|key| key.0[2] == 'A').collect();
+    eprintln!("start keys = {current:?}");
+    while current.iter().any(|&c| c.0[2] != 'Z') {
         match current_instruction.next() {
-            None => current_instruction = instructions.iter(),
+            None => {
+                current_instruction = instructions.iter();
+                continue;
+            }
             Some(Direction::Left) => {
-                current = &map[current][0];
-                step += 1;
+                for c in &mut current {
+                    *c = &map[c][0];
+                }
             }
             Some(Direction::Right) => {
-                current = &map[current][1];
-                step += 1;
+                for c in &mut current {
+                    *c = &map[c][1];
+                }
             }
         }
+        step += 1;
     }
 
     println!("{step}");
