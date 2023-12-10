@@ -32,56 +32,94 @@ enum Direction {
     West,
 }
 
-fn follow(
-    field: &[Vec<Tile>],
-    prev_pos: (usize, usize),
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+struct Move {
+    pos: (usize, usize),
     direction: Direction,
-) -> Option<((usize, usize), Direction)> {
-    let pos = match direction {
-        Direction::North => (prev_pos.0, prev_pos.1 + 1),
-        Direction::East => (prev_pos.0 - 1, prev_pos.1),
-        Direction::South => (prev_pos.0, prev_pos.1 - 1),
-        Direction::West => (prev_pos.0 + 1, prev_pos.1),
+}
+
+fn follow(field: &[Vec<Tile>], prev_move: Move) -> Option<Move> {
+    let pos = match prev_move.direction {
+        Direction::North => (prev_move.pos.0, prev_move.pos.1 + 1),
+        Direction::East => (prev_move.pos.0 - 1, prev_move.pos.1),
+        Direction::South => (prev_move.pos.0, prev_move.pos.1 - 1),
+        Direction::West => (prev_move.pos.0 + 1, prev_move.pos.1),
     };
     // eprintln!(
     //     "{prev_pos:?} => Position {pos:?} tile {:?} coming from {direction:?}",
     //     field[pos.1][pos.0]
     // );
     match field[pos.1][pos.0] {
-        Tile::VerticalPipe => match direction {
-            Direction::North => Some((pos, Direction::North)),
+        Tile::VerticalPipe => match prev_move.direction {
+            Direction::North => Some(Move {
+                pos,
+                direction: Direction::North,
+            }),
             Direction::East => unreachable!(),
-            Direction::South => Some((pos, Direction::South)),
+            Direction::South => Some(Move {
+                pos,
+                direction: Direction::South,
+            }),
             Direction::West => unreachable!(),
         },
-        Tile::HorizontalPipe => match direction {
+        Tile::HorizontalPipe => match prev_move.direction {
             Direction::North => unreachable!(),
-            Direction::East => Some((pos, Direction::East)),
+            Direction::East => Some(Move {
+                pos,
+                direction: Direction::East,
+            }),
             Direction::South => unreachable!(),
-            Direction::West => Some((pos, Direction::West)),
+            Direction::West => Some(Move {
+                pos,
+                direction: Direction::West,
+            }),
         },
-        Tile::NorthEastBend => match direction {
-            Direction::North => Some((pos, Direction::West)),
-            Direction::East => Some((pos, Direction::South)),
+        Tile::NorthEastBend => match prev_move.direction {
+            Direction::North => Some(Move {
+                pos,
+                direction: Direction::West,
+            }),
+            Direction::East => Some(Move {
+                pos,
+                direction: Direction::South,
+            }),
             Direction::South => unreachable!(),
             Direction::West => unreachable!(),
         },
-        Tile::NorthWestBend => match direction {
-            Direction::North => Some((pos, Direction::East)),
+        Tile::NorthWestBend => match prev_move.direction {
+            Direction::North => Some(Move {
+                pos,
+                direction: Direction::East,
+            }),
             Direction::East => unreachable!(),
             Direction::South => unreachable!(),
-            Direction::West => Some((pos, Direction::South)),
+            Direction::West => Some(Move {
+                pos,
+                direction: Direction::South,
+            }),
         },
-        Tile::SouthWestBend => match direction {
+        Tile::SouthWestBend => match prev_move.direction {
             Direction::North => unreachable!(),
             Direction::East => unreachable!(),
-            Direction::South => Some((pos, Direction::East)),
-            Direction::West => Some((pos, Direction::North)),
+            Direction::South => Some(Move {
+                pos,
+                direction: Direction::East,
+            }),
+            Direction::West => Some(Move {
+                pos,
+                direction: Direction::North,
+            }),
         },
-        Tile::SouthEastBend => match direction {
+        Tile::SouthEastBend => match prev_move.direction {
             Direction::North => unreachable!(),
-            Direction::East => Some((pos, Direction::North)),
-            Direction::South => Some((pos, Direction::West)),
+            Direction::East => Some(Move {
+                pos,
+                direction: Direction::North,
+            }),
+            Direction::South => Some(Move {
+                pos,
+                direction: Direction::West,
+            }),
             Direction::West => unreachable!(),
         },
         Tile::Ground => panic!("Ran into the ground at {pos:?}!"),
@@ -89,48 +127,144 @@ fn follow(
     }
 }
 
-fn find_start(field: &[Vec<Tile>]) -> Option<((usize, usize), Direction)> {
+fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
     for (y, row) in field.iter().enumerate() {
         for (x, col) in row.iter().enumerate() {
             if *col == Tile::Start {
                 // scan around the start for connecting pipes
                 if x > 0 {
                     let left = field[y][x - 1];
-                    let start = (x - 1, y);
+                    let pos = (x - 1, y);
                     match left {
-                        Tile::HorizontalPipe => return follow(field, start, Direction::West),
-                        Tile::NorthEastBend => return follow(field, start, Direction::South),
-                        Tile::SouthEastBend => return follow(field, start, Direction::North),
+                        Tile::HorizontalPipe => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::West,
+                                },
+                            )
+                        }
+                        Tile::NorthEastBend => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::South,
+                                },
+                            )
+                        }
+                        Tile::SouthEastBend => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::North,
+                                },
+                            )
+                        }
                         _ => {}
                     }
                 }
                 if y > 0 {
                     let top = field[y - 1][x];
-                    let start = (x, y - 1);
+                    let pos = (x, y - 1);
                     match top {
-                        Tile::VerticalPipe => return follow(field, start, Direction::North),
-                        Tile::SouthWestBend => return follow(field, start, Direction::East),
-                        Tile::SouthEastBend => return follow(field, start, Direction::West),
+                        Tile::VerticalPipe => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::North,
+                                },
+                            )
+                        }
+                        Tile::SouthWestBend => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::East,
+                                },
+                            )
+                        }
+                        Tile::SouthEastBend => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::West,
+                                },
+                            )
+                        }
                         _ => {}
                     }
                 }
                 if x < field.len() - 1 {
                     let right = field[y][x + 1];
-                    let start = (x + 1, y);
+                    let pos = (x + 1, y);
                     match right {
-                        Tile::HorizontalPipe => return follow(field, start, Direction::East),
-                        Tile::NorthWestBend => return follow(field, start, Direction::South),
-                        Tile::SouthWestBend => return follow(field, start, Direction::North),
+                        Tile::HorizontalPipe => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::East,
+                                },
+                            )
+                        }
+                        Tile::NorthWestBend => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::South,
+                                },
+                            )
+                        }
+                        Tile::SouthWestBend => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::North,
+                                },
+                            )
+                        }
                         _ => {}
                     }
                 }
                 if y < field[0].len() - 1 {
                     let bottom = field[y + 1][x];
-                    let start = (x, y + 1);
+                    let pos = (x, y + 1);
                     match bottom {
-                        Tile::VerticalPipe => return follow(field, start, Direction::South),
-                        Tile::NorthWestBend => return follow(field, start, Direction::East),
-                        Tile::NorthEastBend => return follow(field, start, Direction::West),
+                        Tile::VerticalPipe => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::South,
+                                },
+                            )
+                        }
+                        Tile::NorthWestBend => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::East,
+                                },
+                            )
+                        }
+                        Tile::NorthEastBend => {
+                            return follow(
+                                field,
+                                Move {
+                                    pos,
+                                    direction: Direction::West,
+                                },
+                            )
+                        }
                         _ => {}
                     }
                 }
@@ -170,11 +304,10 @@ fn main() -> std::io::Result<()> {
         })
         .collect();
 
-    if let Some((mut pos, mut direction)) = find_start(&field) {
-        let mut walk = vec![(pos, direction)];
-        while let Some(step) = follow(&field, pos, direction) {
-            pos = step.0;
-            direction = step.1;
+    if let Some(mut pos) = find_start(&field) {
+        let mut walk = vec![pos];
+        while let Some(step) = follow(&field, pos) {
+            pos = step;
             walk.push(step);
         }
         // println!("{walk:?}");
