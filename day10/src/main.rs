@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     fmt::Debug,
     fs::File,
     io::{BufRead, BufReader},
@@ -123,7 +124,7 @@ fn follow(field: &[Vec<Tile>], prev_move: Move) -> Option<Move> {
     }
 }
 
-fn find_start(field: &[Vec<Tile>]) -> Option<(Move, Move)> {
+fn find_start(field: &[Vec<Tile>]) -> Option<[Move; 2]> {
     for (y, row) in field.iter().enumerate() {
         for (x, col) in row.iter().enumerate() {
             if *col == Tile::Start {
@@ -134,58 +135,40 @@ fn find_start(field: &[Vec<Tile>]) -> Option<(Move, Move)> {
                     let pos = (x - 1, y);
                     match left {
                         Tile::HorizontalPipe => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::East,
+                                },
                                 Move {
                                     pos,
-                                    direction: Direction::West,
+                                    direction: Direction::East,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::West,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         Tile::NorthEastBend => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::West,
+                                },
                                 Move {
                                     pos,
                                     direction: Direction::South,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::South,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         Tile::SouthEastBend => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::West,
+                                },
                                 Move {
                                     pos,
                                     direction: Direction::North,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::North,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         _ => {}
                     }
@@ -195,58 +178,40 @@ fn find_start(field: &[Vec<Tile>]) -> Option<(Move, Move)> {
                     let pos = (x, y - 1);
                     match top {
                         Tile::VerticalPipe => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::South,
+                                },
                                 Move {
                                     pos,
-                                    direction: Direction::North,
+                                    direction: Direction::South,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::North,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         Tile::SouthWestBend => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::North,
+                                },
                                 Move {
                                     pos,
                                     direction: Direction::East,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::East,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         Tile::SouthEastBend => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::North,
+                                },
                                 Move {
                                     pos,
                                     direction: Direction::West,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::West,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         _ => {}
                     }
@@ -256,58 +221,40 @@ fn find_start(field: &[Vec<Tile>]) -> Option<(Move, Move)> {
                     let pos = (x + 1, y);
                     match right {
                         Tile::HorizontalPipe => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::West,
+                                },
                                 Move {
                                     pos,
-                                    direction: Direction::East,
+                                    direction: Direction::West,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::East,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         Tile::NorthWestBend => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::East,
+                                },
                                 Move {
                                     pos,
                                     direction: Direction::South,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::South,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         Tile::SouthWestBend => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::East,
+                                },
                                 Move {
                                     pos,
                                     direction: Direction::North,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::North,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         _ => {}
                     }
@@ -317,58 +264,40 @@ fn find_start(field: &[Vec<Tile>]) -> Option<(Move, Move)> {
                     let pos = (x, y + 1);
                     match bottom {
                         Tile::VerticalPipe => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::North,
+                                },
                                 Move {
                                     pos,
-                                    direction: Direction::South,
+                                    direction: Direction::North,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::South,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         Tile::NorthWestBend => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::East,
+                                },
                                 Move {
                                     pos,
                                     direction: Direction::East,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::East,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         Tile::NorthEastBend => {
-                            return follow(
-                                field,
+                            return Some([
+                                Move {
+                                    pos: start,
+                                    direction: Direction::South,
+                                },
                                 Move {
                                     pos,
                                     direction: Direction::West,
                                 },
-                            )
-                            .map(|mov| {
-                                (
-                                    Move {
-                                        pos: start,
-                                        direction: Direction::West,
-                                    },
-                                    mov,
-                                )
-                            })
+                            ]);
                         }
                         _ => {}
                     }
@@ -409,17 +338,50 @@ fn main() -> std::io::Result<()> {
         })
         .collect();
 
-    let Some((start, mut pos)) = find_start(&field) else {
+    let Some(start) = find_start(&field) else {
         eprintln!("Start not found");
         return Ok(());
     };
-    let mut walk = vec![start, pos];
+    let mut walk = start.to_vec();
+    let mut pos = walk.last().copied().unwrap();
     while let Some(step) = follow(&field, pos) {
         pos = step;
         walk.push(step);
     }
-    // println!("{walk:?}");
-    println!("{}", (walk.len() + 1) / 2);
+
+    let start_connection = (start[0].direction, walk.last().unwrap().direction);
+
+    let crossings: HashSet<_> = walk.into_iter().map(|mov| mov.pos).collect();
+
+    let mut inside = 0;
+    for (y, row) in field.into_iter().enumerate() {
+        let mut crossings_count = 0;
+        for (x, tile) in row.into_iter().enumerate() {
+            if crossings.contains(&(x, y)) {
+                // count only top crossings!
+                match tile {
+                    Tile::VerticalPipe => crossings_count += 1,
+                    Tile::HorizontalPipe => {}
+                    Tile::NorthEastBend => crossings_count += 1,
+                    Tile::NorthWestBend => crossings_count += 1,
+                    Tile::SouthWestBend => {}
+                    Tile::SouthEastBend => {}
+                    Tile::Start => {
+                        if start_connection.0 == Direction::North
+                            || start_connection.1 == Direction::North
+                        {
+                            crossings_count += 1;
+                        }
+                    }
+                    Tile::Ground => unreachable!(),
+                }
+            } else if crossings_count % 2 == 1 {
+                inside += 1;
+            }
+        }
+    }
+
+    println!("{inside}");
 
     Ok(())
 }
