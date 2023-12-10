@@ -53,13 +53,13 @@ fn main() -> std::io::Result<()> {
             steps.reverse();
 
             for idx in 0..(steps.len() - 1) {
-                let prev = *steps[idx].last().unwrap();
+                let prev = *steps[idx].first().unwrap();
                 let cur = &mut steps[idx + 1];
-                let value = *cur.last().unwrap();
-                cur.push(value + prev);
+                let value = *cur.first().unwrap();
+                cur.insert(0, value - prev);
             }
 
-            *steps.last().unwrap().last().unwrap()
+            *steps.last().unwrap().first().unwrap()
         })
         .sum::<isize>();
 
