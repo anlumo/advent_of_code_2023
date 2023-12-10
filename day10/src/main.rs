@@ -45,10 +45,6 @@ fn follow(field: &[Vec<Tile>], prev_move: Move) -> Option<Move> {
         Direction::South => (prev_move.pos.0, prev_move.pos.1 - 1),
         Direction::West => (prev_move.pos.0 + 1, prev_move.pos.1),
     };
-    // eprintln!(
-    //     "{prev_pos:?} => Position {pos:?} tile {:?} coming from {direction:?}",
-    //     field[pos.1][pos.0]
-    // );
     match field[pos.1][pos.0] {
         Tile::VerticalPipe => match prev_move.direction {
             Direction::North => Some(Move {
@@ -127,10 +123,11 @@ fn follow(field: &[Vec<Tile>], prev_move: Move) -> Option<Move> {
     }
 }
 
-fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
+fn find_start(field: &[Vec<Tile>]) -> Option<(Move, Move)> {
     for (y, row) in field.iter().enumerate() {
         for (x, col) in row.iter().enumerate() {
             if *col == Tile::Start {
+                let start = (x, y);
                 // scan around the start for connecting pipes
                 if x > 0 {
                     let left = field[y][x - 1];
@@ -144,6 +141,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::West,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::West,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         Tile::NorthEastBend => {
                             return follow(
@@ -153,6 +159,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::South,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::South,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         Tile::SouthEastBend => {
                             return follow(
@@ -162,6 +177,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::North,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::North,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         _ => {}
                     }
@@ -178,6 +202,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::North,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::North,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         Tile::SouthWestBend => {
                             return follow(
@@ -187,6 +220,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::East,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::East,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         Tile::SouthEastBend => {
                             return follow(
@@ -196,6 +238,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::West,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::West,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         _ => {}
                     }
@@ -212,6 +263,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::East,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::East,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         Tile::NorthWestBend => {
                             return follow(
@@ -221,6 +281,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::South,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::South,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         Tile::SouthWestBend => {
                             return follow(
@@ -230,6 +299,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::North,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::North,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         _ => {}
                     }
@@ -246,6 +324,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::South,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::South,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         Tile::NorthWestBend => {
                             return follow(
@@ -255,6 +342,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::East,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::East,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         Tile::NorthEastBend => {
                             return follow(
@@ -264,6 +360,15 @@ fn find_start(field: &[Vec<Tile>]) -> Option<Move> {
                                     direction: Direction::West,
                                 },
                             )
+                            .map(|mov| {
+                                (
+                                    Move {
+                                        pos: start,
+                                        direction: Direction::West,
+                                    },
+                                    mov,
+                                )
+                            })
                         }
                         _ => {}
                     }
@@ -304,18 +409,17 @@ fn main() -> std::io::Result<()> {
         })
         .collect();
 
-    if let Some(mut pos) = find_start(&field) {
-        let mut walk = vec![pos];
-        while let Some(step) = follow(&field, pos) {
-            pos = step;
-            walk.push(step);
-        }
-        // println!("{walk:?}");
-        println!("{}", 1 + (walk.len() + 1) / 2);
+    let Some((start, mut pos)) = find_start(&field) else {
+        eprintln!("Start not found");
         return Ok(());
+    };
+    let mut walk = vec![start, pos];
+    while let Some(step) = follow(&field, pos) {
+        pos = step;
+        walk.push(step);
     }
-
-    eprintln!("Start not found");
+    // println!("{walk:?}");
+    println!("{}", (walk.len() + 1) / 2);
 
     Ok(())
 }
