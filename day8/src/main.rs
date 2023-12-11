@@ -7,6 +7,7 @@ use std::{
 };
 
 use clap::Parser;
+use num::Integer;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -18,7 +19,7 @@ enum Direction {
     Right,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 struct Key([char; 3]);
 
 impl std::fmt::Debug for Key {
@@ -78,23 +79,61 @@ fn main() -> std::io::Result<()> {
         .collect();
 
     let mut step = 0;
-    let mut current_instruction = instructions.iter();
-    let mut current: Vec<_> = map.keys().filter(|key| key.0[2] == 'A').collect();
-    eprintln!("start keys = {current:?}");
+    let mut current_instruction = instructions.iter().enumerate();
+    let start: Vec<_> = map.keys().filter(|key| key.0[2] == 'A').collect();
+    let mut current = start.clone();
+    // eprintln!("start keys = {current:?}");
+    let mut cycles: Vec<_> = start.iter().map(|&key| (vec![(*key, 0)], false)).collect();
     while current.iter().any(|&c| c.0[2] != 'Z') {
         match current_instruction.next() {
             None => {
-                current_instruction = instructions.iter();
+                current_instruction = instructions.iter().enumerate();
                 continue;
             }
-            Some(Direction::Left) => {
-                for c in &mut current {
+            Some((instruction, Direction::Left)) => {
+                for (idx, c) in current.iter_mut().enumerate() {
                     *c = &map[c][0];
+                    if !cycles[idx].1 {
+                        if cycles[idx].0.contains(&(**c, instruction + 1)) {
+                            cycles[idx].0.push((**c, instruction + 1));
+
+                            cycles[idx].1 = true;
+                            if cycles.iter().all(|&(_, done)| done) {
+                                finalize(
+                                    &cycles
+                                        .into_iter()
+                                        .map(|(entry, _)| entry)
+                                        .collect::<Vec<_>>(),
+                                );
+                                return Ok(());
+                            }
+                        } else {
+                            cycles[idx].0.push((**c, instruction + 1));
+                        }
+                    }
                 }
             }
-            Some(Direction::Right) => {
-                for c in &mut current {
+            Some((instruction, Direction::Right)) => {
+                for (idx, c) in current.iter_mut().enumerate() {
                     *c = &map[c][1];
+                    if !cycles[idx].1 {
+                        if cycles[idx].0.contains(&(**c, instruction + 1)) {
+                            cycles[idx].0.push((**c, instruction + 1));
+
+                            cycles[idx].1 = true;
+                            if cycles.iter().all(|&(_, done)| done) {
+                                finalize(
+                                    &cycles
+                                        .into_iter()
+                                        .map(|(entry, _)| entry)
+                                        .collect::<Vec<_>>(),
+                                );
+                                return Ok(());
+                            }
+                        } else {
+                            cycles[idx].0.push((**c, instruction + 1));
+                        }
+                    }
                 }
             }
         }
@@ -104,4 +143,28 @@ fn main() -> std::io::Result<()> {
     println!("{step}");
 
     Ok(())
+}
+
+fn finalize(cycles: &[Vec<(Key, usize)>]) {
+    let mut equation = Vec::new();
+    for (cycle_idx, cycle) in cycles.iter().enumerate() {
+        let last = cycle.last().unwrap();
+        let (_, prefix) = cycle.iter().find(|&entry| *entry == *last).unwrap();
+        let (suffix, _) = cycle
+            .iter()
+            .enumerate()
+            .find(|(_, (key, _))| key.0[2] == 'Z')
+            .unwrap();
+        let cycle_len = cycle.len() - prefix - 1;
+
+        println!(
+            "cycle {cycle_idx}: {prefix} + n * {cycle_len} + {}",
+            suffix - prefix
+        );
+        // println!("{:?}", &cycle[..100]);
+        equation.push((prefix, cycle_len, suffix - prefix));
+    }
+
+    let lcm = equation.iter().fold(1, |prev, &(_, cur, _)| cur.lcm(&prev));
+    println!("lcm = {lcm}");
 }
