@@ -99,7 +99,7 @@ fn main() -> std::io::Result<()> {
     let file = File::open(args.filename)?;
     let reader = BufReader::new(file);
 
-    let rows: Vec<Row> = reader
+    let mut rows: Vec<Row> = reader
         .lines()
         .filter_map(|line| {
             let line = line.ok()?;
@@ -122,6 +122,16 @@ fn main() -> std::io::Result<()> {
         })
         .collect();
 
+    // fivefold it up
+    for row in &mut rows {
+        let group_info = row.group_info.clone();
+        let configuration = row.configuration.clone();
+        for _ in 0..5 {
+            row.group_info.extend(group_info.iter());
+            row.configuration.extend(configuration.iter());
+        }
+    }
+
     let result = rows
         .iter()
         .map(|row| {
@@ -130,6 +140,9 @@ fn main() -> std::io::Result<()> {
                 .iter()
                 .filter(|&spring| *spring == Spring::Unknown)
                 .count();
+            if unknowns > usize::BITS as _ {
+                panic!("Too many unknowns in this line!");
+            }
             (0..2usize.pow(unknowns as _))
                 .filter(|bits| {
                     let mut bit_idx = 0;
