@@ -1,10 +1,8 @@
-#![allow(unused)]
-
 use std::{
+    collections::HashSet,
     fmt::Debug,
     fs::File,
     io::{BufRead, BufReader},
-    ops::Range,
     path::PathBuf,
 };
 
@@ -36,9 +34,6 @@ impl Row {
             width: idx,
         }
     }
-    fn at(&self, index: usize) -> bool {
-        self.bits & (1 << index) != 0
-    }
 }
 
 impl std::fmt::Debug for Row {
@@ -57,7 +52,6 @@ impl std::fmt::Debug for Row {
     }
 }
 
-// only works with 0-based rows!
 fn transpose(pattern: &[Row]) -> Vec<Row> {
     let mut result = vec![
         Row {
@@ -78,19 +72,35 @@ fn transpose(pattern: &[Row]) -> Vec<Row> {
     result
 }
 
-fn check_symmetry(pattern: &[Row]) -> Vec<usize> {
-    // println!("check_symmetry {pattern:#?}");
+fn check_symmetry(pattern: &[Row]) -> HashSet<usize> {
     (1..pattern.len())
         .filter(|&y| {
             (y..pattern.len()).all(|y2| {
-                // println!("y = {y}, y2 = {y2}");
                 if 2 * y < y2 + 1 {
                     true
                 } else {
                     pattern[y2] == pattern[2 * y - y2 - 1]
                 }
             })
-            // println!("result = {result:?}");
+        })
+        .collect()
+}
+
+fn fix_smudge(pattern: &[Row], location: usize) -> Vec<Row> {
+    let x = location % pattern[0].width;
+    let y = location / pattern[0].width;
+    pattern
+        .iter()
+        .enumerate()
+        .map(|(idx, row)| {
+            if idx == y {
+                Row {
+                    bits: row.bits ^ (1 << x),
+                    width: row.width,
+                }
+            } else {
+                *row
+            }
         })
         .collect()
 }
@@ -119,12 +129,25 @@ fn main() -> std::io::Result<()> {
     let result = patterns
         .iter()
         .map(|pattern| {
-            // eprintln!("{pattern:#?}");
-            let sym_v = check_symmetry(pattern);
+            let original_sym_v = check_symmetry(pattern);
             let transposed = transpose(pattern);
-            let sym_h = check_symmetry(&transposed);
+            let original_sym_h = check_symmetry(&transposed);
 
-            sym_v.iter().sum::<usize>() * 100 + sym_h.iter().sum::<usize>()
+            let mut sym_v = HashSet::new();
+            let mut sym_h = HashSet::new();
+
+            for location in 0..(pattern[0].width * pattern.len()) {
+                let fixed = fix_smudge(pattern, location);
+                let new_sym_v = check_symmetry(&fixed);
+                let transposed = transpose(&fixed);
+                let new_sym_h = check_symmetry(&transposed);
+
+                sym_v.extend(new_sym_v);
+                sym_h.extend(new_sym_h);
+            }
+            let sym_v: Vec<_> = sym_v.difference(&original_sym_v).collect();
+            let sym_h: Vec<_> = sym_h.difference(&original_sym_h).collect();
+            sym_v.iter().copied().sum::<usize>() * 100 + sym_h.iter().copied().sum::<usize>()
         })
         .sum::<usize>();
 
